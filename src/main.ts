@@ -2,6 +2,7 @@ import { k } from "./kaboomContext";
 import { createMainMenu } from './scenes/mainMenu';
 import { createGameOver } from './scenes/gameOver';
 import { createGame } from './scenes/game';
+import { resetScore } from './utils/score';
 
 // ==============================
 // Main Menu scene
@@ -35,6 +36,7 @@ k.scene("gameOver", () => {
         }
 
         if (k.isKeyPressed("space")) {
+            resetScore()
             k.go("game")
         }
     })
