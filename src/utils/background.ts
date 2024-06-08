@@ -34,16 +34,15 @@ function randomSprite() {
 // ==============================
 
 export function createBackground() {
-
     const background = k.add([
         k.rect(k.width(), k.height()),
         k.color(52, 152, 219),
         k.pos(0, 0),
         k.z(-1),
-        "backgroundColor"
+        "background"
     ])
 
-    k.loop(5, () => {
+    k.loop(8, () => {
         k.add([
             k.sprite(randomSprite()),
             k.pos(k.width(), k.rand(0, k.height())),
@@ -56,12 +55,5 @@ export function createBackground() {
         ])
     })
 
-
     return background
-}
-
-export function deleteBackground() {
-    k.get("backgroundColor").forEach(bg => {
-        bg.destroy();
-    })
 }

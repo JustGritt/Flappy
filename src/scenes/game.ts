@@ -1,5 +1,6 @@
 import { createBackground } from '../utils/background';
 import { createPlayer } from '../entities/player';
+import { createPipe } from '../entities/pipes';
 import { isPaused, pause, resume } from "../utils/pause";
 import { createScore } from '../utils/score';
 import { k } from "../kaboomContext";
@@ -9,11 +10,14 @@ import { k } from "../kaboomContext";
 // Variables
 // ==============================
 
-export function createGame(difficulty: string) {
-    handleDifficulty(difficulty)
+export function createGame() {
     createBackground()
     createPlayer()
     createScore()
+
+    k.loop(5, () => {
+        createPipe()
+    })
 
     k.onUpdate(() => {
         if (k.isKeyPressed("escape")) {
@@ -24,8 +28,13 @@ export function createGame(difficulty: string) {
             isPaused ? resume() : pause()
         }
     })
-}
 
-function handleDifficulty(difficulty: string) {
-    console.log(difficulty)
+    // Handle resize
+    let resizeTimeout: any;
+    k.onResize(() => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            createBackground()
+        }, 1000);
+    });
 }
