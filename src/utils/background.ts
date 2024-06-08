@@ -46,7 +46,7 @@ export function createBackground() {
         k.add([
             k.sprite(randomSprite()),
             k.pos(k.width(), k.rand(0, k.height())),
-            k.move(0, -100),
+            k.move(0, -110),
             k.anchor("center"),
             k.scale(1/2),
             k.rotate(1),

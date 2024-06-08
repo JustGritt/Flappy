@@ -1,3 +1,4 @@
+import { increaseScore } from "../utils/score";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -66,6 +67,10 @@ export function createPlayer() {
     k.onCollide("player", "pipe", (player) => {
         k.addKaboom(player.pos)
         k.go("gameOver")
+    });
+
+    k.onCollideEnd("player", "gap", () => {
+        increaseScore(1)
     });
 
     return player

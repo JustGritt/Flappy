@@ -15,7 +15,7 @@ export function createGame() {
     createPlayer()
     createScore()
 
-    k.loop(5, () => {
+    k.loop(3, () => {
         createPipe()
     })
 
