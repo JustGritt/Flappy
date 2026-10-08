@@ -10,6 +10,9 @@ export const JUMP_FORCE = 500;
 // ==============================
 
 export const PIPE_WIDTH = 100;
+export const PIPE_CAP_HEIGHT = 32;
+// How far the cap sticks out on each side of the pipe
+export const PIPE_CAP_OVERHANG = 8;
 
 export const GAP_SIZE = 350;
 export const MIN_GAP_SIZE = 220;

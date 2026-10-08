@@ -3,7 +3,7 @@ import {
     GAP_SIZE, MIN_GAP_SIZE,
     PIPE_SPEED, MAX_PIPE_SPEED,
     PIPE_INTERVAL, MIN_PIPE_INTERVAL,
-    MAX_DIFFICULTY_SCORE, PIPE_WIDTH,
+    MAX_DIFFICULTY_SCORE, PIPE_WIDTH, PIPE_CAP_HEIGHT, PIPE_CAP_OVERHANG,
 } from "../utils/constants";
 import { k } from "../kaboomContext";
 
@@ -44,8 +44,8 @@ function createMiddlePart(world: GameObj, topHeight: number, bottomHeight: numbe
 }
 
 function createPipePart(world: GameObj, height: number, anchor: "top" | "bot", yPosition: number, speed: number) {
-    return world.add([
-        k.rect(PIPE_WIDTH, height, { radius: 16 }),
+    const pipe = world.add([
+        k.rect(PIPE_WIDTH, height, { radius: 4 }),
         k.color(150, 111, 51),
         k.outline(4, k.rgb(110, 78, 32)),
         k.anchor(anchor),
@@ -55,6 +55,20 @@ function createPipePart(world: GameObj, height: number, anchor: "top" | "bot", y
         k.offscreen({ destroy: true }),
         "pipe",
     ]);
+
+    // Cap at the open end. Child positions are relative to the parent's anchor
+    // point, so the open end is at +height for a "top" pipe and -height for a "bot" one.
+    pipe.add([
+        k.rect(PIPE_WIDTH + PIPE_CAP_OVERHANG * 2, PIPE_CAP_HEIGHT, { radius: 6 }),
+        k.color(130, 94, 40),
+        k.outline(4, k.rgb(110, 78, 32)),
+        k.anchor(anchor === "top" ? "bot" : "top"),
+        k.pos(0, anchor === "top" ? height : -height),
+        k.area(),
+        "pipe",
+    ]);
+
+    return pipe;
 }
 
 // ==============================
