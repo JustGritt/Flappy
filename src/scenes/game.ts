@@ -1,40 +1,101 @@
 import { createBackground } from '../utils/background';
 import { createPlayer } from '../entities/player';
-import { createPipe } from '../entities/pipes';
-import { isPaused, pause, resume } from "../utils/pause";
-import { createScore } from '../utils/score';
+import { createPipe, getDifficulty } from '../entities/pipes';
+import { isPaused, pause, resetPause, resume } from "../utils/pause";
+import { createScore, increaseScore, resetScore, score } from '../utils/score';
+import { DEATH_DELAY, FIRST_PIPE_DELAY, GRAVITY } from '../utils/constants';
 import { k } from "../kaboomContext";
 
+// ==============================
+// Functions
+// ==============================
+
+function createHint() {
+    const hint = k.add([
+        k.text("Space / tap to flap", { size: 32 }),
+        k.pos(k.width() / 2, k.height() / 2 + 120),
+        k.anchor("center"),
+        k.opacity(1),
+        k.z(10),
+        k.fixed(),
+    ])
+
+    hint.onUpdate(() => {
+        hint.pos.x = k.width() / 2
+        hint.opacity = k.wave(0.4, 1, k.time() * 4)
+    })
+
+    return hint
+}
 
 // ==============================
-// Variables
+// Export
 // ==============================
 
 export function createGame() {
-    createBackground()
-    createPlayer()
+    resetScore()
+    resetPause()
+    k.setGravity(GRAVITY)
+
+    // Everything that moves lives in `world`, so pausing it freezes the game
+    // while the UI (score, pause overlay) stays responsive.
+    const world = k.add([k.timer()])
+
+    createBackground(world)
     createScore()
+    const hint = createHint()
+    const { player, flap, die } = createPlayer(world)
 
-    k.loop(3, () => {
-        createPipe()
+    // Pipes spawn faster as the score increases
+    const spawnPipes = () => {
+        createPipe(world, score)
+        world.wait(getDifficulty(score).interval, spawnPipes)
+    }
+
+    const onFlap = () => {
+        if (isPaused) return
+        if (player.state === "ready") {
+            hint.destroy()
+            world.wait(FIRST_PIPE_DELAY, spawnPipes)
+        }
+        flap()
+    }
+
+    k.onKeyPress("space", onFlap)
+    k.onKeyPress("up", onFlap)
+    k.onMousePress(onFlap)
+
+    // ==============================
+    // Death
+    // ==============================
+
+    const gameOver = () => {
+        if (player.state === "dead") return
+        die()
+        world.paused = true
+        k.addKaboom(player.pos)
+        k.shake(12)
+        k.wait(DEATH_DELAY, () => k.go("gameOver"))
+    }
+
+    k.onCollide("player", "pipe", gameOver)
+
+    player.onUpdate(() => {
+        if (player.pos.y >= k.height()) gameOver()
     })
 
-    k.onUpdate(() => {
-        if (k.isKeyPressed("escape")) {
-            k.go("menu")
-        }
-
-        if (k.isKeyPressed("p")) {
-            isPaused ? resume() : pause()
-        }
+    k.onCollideEnd("player", "gap", () => {
+        if (player.state !== "dead") increaseScore(1)
     })
 
-    // Handle resize
-    let resizeTimeout: any;
-    k.onResize(() => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-            createBackground()
-        }, 1000);
-    });
+    // ==============================
+    // Controls
+    // ==============================
+
+    k.onKeyPress("escape", () => k.go("menu"))
+
+    k.onKeyPress("p", () => {
+        if (player.state === "dead") return
+        isPaused ? resume(world) : pause(world)
+    })
 }

@@ -1,3 +1,4 @@
+import type { GameObj } from "kaboom";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -33,27 +34,46 @@ function randomSprite() {
 // Exports
 // ==============================
 
-export function createBackground() {
+/**
+ * Adds the sky and the cloud spawner. Clouds are added to `parent` (and its
+ * timer drives the spawner) so pausing the parent also freezes them.
+ * Call once per scene: it handles window resizes itself.
+ */
+export function createBackground(parent?: GameObj) {
     const background = k.add([
         k.rect(k.width(), k.height()),
         k.color(52, 152, 219),
         k.pos(0, 0),
-        k.z(-1),
+        k.fixed(),
+        k.z(-2),
         "background"
     ])
 
-    k.loop(8, () => {
-        k.add([
+    k.onResize(() => {
+        background.width = k.width()
+        background.height = k.height()
+    })
+
+    const spawnCloud = () => {
+        const comps = [
             k.sprite(randomSprite()),
-            k.pos(k.width(), k.rand(0, k.height())),
-            k.move(0, -110),
+            k.pos(k.width() + 100, k.rand(0, k.height())),
+            k.move(k.LEFT, 110),
             k.anchor("center"),
             k.scale(1/2),
             k.rotate(1),
+            k.offscreen({ destroy: true, distance: 300 }),
             k.z(-1),
             "cloud"
-        ])
-    })
+        ]
+        parent ? parent.add(comps) : k.add(comps)
+    }
+
+    if (parent) {
+        parent.loop(8, spawnCloud)
+    } else {
+        k.loop(8, spawnCloud)
+    }
 
     return background
 }

@@ -1,11 +1,34 @@
 import { k } from "../kaboomContext";
 
 // ==============================
+// Persistence
+// ==============================
+
+const HIGH_SCORE_KEY = "flappy.highScore";
+
+function loadHighScore() {
+    try {
+        return Number(localStorage.getItem(HIGH_SCORE_KEY)) || 0;
+    } catch {
+        return 0;
+    }
+}
+
+function saveHighScore(value: number) {
+    try {
+        localStorage.setItem(HIGH_SCORE_KEY, value.toString());
+    } catch {
+        // Storage unavailable (private mode, blocked cookies...): keep it in memory only
+    }
+}
+
+// ==============================
 // Handle Score
 // ==============================
 
-export let highScore = 0 as number;
-export let score = 0 as number;
+export let highScore = loadHighScore();
+export let score = 0;
+export let isNewHighScore = false;
 
 export function createScore() {
     const scoreLabel = k.add([
@@ -17,20 +40,26 @@ export function createScore() {
         "score"
     ])
 
+    k.onResize(() => {
+        scoreLabel.pos.x = k.width() / 2
+    })
+
     return scoreLabel
 }
 
 export function resetScore() {
     score = 0
+    isNewHighScore = false
 }
 
 export function increaseScore(value: number) {
-    const scoreLabel = k.get("score")
     score += value
-    scoreLabel[0].text = score.toString()
+    k.get("score").forEach(label => label.text = score.toString())
 
     // Update highscore
-    if(score > highScore) {
+    if (score > highScore) {
         highScore = score
+        isNewHighScore = true
+        saveHighScore(highScore)
     }
 }
