@@ -28,7 +28,7 @@ function createPauseOverlay() {
     ]);
 
     const subtext = overlay.add([
-        k.text("Press [p] to resume"),
+        k.text("Tap II or press [p] to resume", { align: "center", width: (k.width() - 32) / 1.5 }),
         k.pos(k.width() / 2, k.height() / 2),
         k.anchor("center"),
         k.scale(1.5),
@@ -47,6 +47,7 @@ function createPauseOverlay() {
         overlay.height = k.height();
         title.pos = k.vec2(k.width() / 2, k.height() / 2 - 100);
         subtext.pos = k.vec2(k.width() / 2, k.height() / 2);
+        subtext.width = (k.width() - 32) / subtext.scale.x;
     });
 }
 
