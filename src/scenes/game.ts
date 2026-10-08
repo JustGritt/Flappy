@@ -54,7 +54,7 @@ export function createGame() {
     }
 
     const onFlap = () => {
-        if (isPaused || isPointerOnButton()) return
+        if (isPaused) return
         if (player.state === "ready") {
             hint.destroy()
             world.wait(FIRST_PIPE_DELAY, spawnPipes)
@@ -64,7 +64,10 @@ export function createGame() {
 
     k.onKeyPress("space", onFlap)
     k.onKeyPress("up", onFlap)
-    k.onMousePress(onFlap)
+    // A click on a HUD button also fires this, so ignore it there
+    k.onMousePress(() => {
+        if (!isPointerOnButton()) onFlap()
+    })
 
     // ==============================
     // Death
