@@ -30,6 +30,13 @@ export const MAX_DIFFICULTY_SCORE = 40;
 export const FIRST_PIPE_DELAY = 1;
 
 // ==============================
+// Score
+// ==============================
+
+// Every N points the score flashes gold and plays the milestone sound
+export const SCORE_MILESTONE = 10;
+
+// ==============================
 // Game over
 // ==============================
 

@@ -1,5 +1,6 @@
 import { k } from "../kaboomContext";
 import { playSound } from "./audio";
+import { SCORE_MILESTONE } from "./constants";
 
 // ==============================
 // Persistence
@@ -27,6 +28,9 @@ function saveHighScore(value: number) {
 // Handle Score
 // ==============================
 
+const WHITE = k.rgb(255, 255, 255);
+const GOLD = k.rgb(255, 205, 60);
+
 export let highScore = loadHighScore();
 export let score = 0;
 export let isNewHighScore = false;
@@ -36,6 +40,8 @@ export function createScore() {
         k.text(score.toString()),
         k.pos(k.width() / 2, 40),
         k.anchor("center"),
+        k.scale(1),
+        k.color(WHITE),
         k.z(10),
         k.fixed(),
         "score"
@@ -55,8 +61,16 @@ export function resetScore() {
 
 export function increaseScore(value: number) {
     score += value
-    k.get("score").forEach(label => label.text = score.toString())
-    playSound("score")
+    const isMilestone = score % SCORE_MILESTONE === 0
+    playSound(isMilestone ? "milestone" : "score")
+
+    k.get("score").forEach(label => {
+        label.text = score.toString()
+        k.tween(1.6, 1, 0.25, v => label.scale = k.vec2(v), k.easings.easeOutBack)
+        if (isMilestone) {
+            k.tween(GOLD, WHITE, 0.8, c => label.color = c, k.easings.easeInQuad)
+        }
+    })
 
     // Update highscore
     if (score > highScore) {
