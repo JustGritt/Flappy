@@ -5,6 +5,7 @@ import { isPaused, pause, resetPause, resume } from "../utils/pause";
 import { createScore, increaseScore, resetScore, score } from '../utils/score';
 import { DEATH_DELAY, FIRST_PIPE_DELAY, GRAVITY } from '../utils/constants';
 import { BUTTON_SIZE, createButton, isPointerOnButton } from '../utils/ui';
+import { bindMuteKey, isMuted, playSound, toggleMute } from '../utils/audio';
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -59,7 +60,7 @@ export function createGame() {
             hint.destroy()
             world.wait(FIRST_PIPE_DELAY, spawnPipes)
         }
-        flap()
+        if (flap()) playSound("flap")
     }
 
     k.onKeyPress("space", onFlap)
@@ -78,6 +79,7 @@ export function createGame() {
         die()
         world.paused = true
         pauseButton.hidden = true
+        playSound("hit")
         k.addKaboom(player.pos)
         k.shake(12)
         k.wait(DEATH_DELAY, () => k.go("gameOver"))
@@ -107,8 +109,21 @@ export function createGame() {
     k.onKeyPress("p", togglePause)
 
     const { button: pauseButton } = createButton("II", togglePause)
+
+    const { button: muteButton, label: muteLabel } = createButton("", () => {
+        toggleMute()
+        updateMuteButton()
+    })
+    const updateMuteButton = () => {
+        muteLabel.text = isMuted() ? "OFF" : "SFX"
+        muteLabel.opacity = isMuted() ? 0.5 : 1
+    }
+    updateMuteButton()
+    bindMuteKey(updateMuteButton)
+
     const layoutButtons = () => {
         pauseButton.pos = k.vec2(k.width() - BUTTON_SIZE / 2 - 16, BUTTON_SIZE / 2 + 16)
+        muteButton.pos = pauseButton.pos.sub(BUTTON_SIZE + 12, 0)
     }
     layoutButtons()
     k.onResize(layoutButtons)

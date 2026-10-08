@@ -1,5 +1,6 @@
 import { createBackground } from '../utils/background';
 import { highScore } from '../utils/score';
+import { bindMuteKey, isMuted } from '../utils/audio';
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -47,7 +48,21 @@ export function createMainMenu() {
     ])
     highScoreText.hidden = highScore === 0
 
+    // Text only: any click on the menu starts the game
+    const soundText = k.add([
+        k.text("", { size: 24 }),
+        k.pos(0, 0),
+        k.anchor("center"),
+        k.opacity(0.8),
+    ])
+    const updateSoundText = () => {
+        soundText.text = `[M] Sound: ${isMuted() ? "OFF" : "ON"}`
+    }
+    updateSoundText()
+    bindMuteKey(updateSoundText)
+
     const layout = () => {
+        soundText.pos = k.vec2(k.width() / 2, k.height() - 40)
         startText.textSize = Math.min(48, k.width() / 14)
         startText.width = k.width() - 32
         title.pos = k.vec2(k.width() / 2, k.height() / 4)

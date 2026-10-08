@@ -63,15 +63,17 @@ export function createPlayer(world: GameObj) {
 
     return {
         player,
+        /** Returns whether the player actually jumped. */
         flap() {
-            if (player.state === "dead") return
+            if (player.state === "dead") return false
             if (player.state === "ready") {
                 player.gravityScale = 1
                 player.enterState("flying")
             }
             // Can't fly above the screen
-            if (player.pos.y < 0) return
+            if (player.pos.y < 0) return false
             player.jump(JUMP_FORCE)
+            return true
         },
         die() {
             player.enterState("dead")

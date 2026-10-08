@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sounds": "node scripts/generate-sounds.mjs"
   },
   "devDependencies": {
     "terser": "^5.31.0",

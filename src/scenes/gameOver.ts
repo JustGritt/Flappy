@@ -1,6 +1,7 @@
 import { createBackground } from '../utils/background';
 import { score, highScore, isNewHighScore } from '../utils/score';
 import { RESTART_INPUT_DELAY } from '../utils/constants';
+import { bindMuteKey, playSound } from '../utils/audio';
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -101,4 +102,7 @@ export function createGameOver() {
     k.onKeyPress("space", restart)
     k.onMousePress(restart)
     k.onKeyPress("escape", () => k.go("menu"))
+    bindMuteKey()
+
+    if (isNewHighScore) playSound("highscore")
 }

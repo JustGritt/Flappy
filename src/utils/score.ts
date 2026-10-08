@@ -1,4 +1,5 @@
 import { k } from "../kaboomContext";
+import { playSound } from "./audio";
 
 // ==============================
 // Persistence
@@ -55,6 +56,7 @@ export function resetScore() {
 export function increaseScore(value: number) {
     score += value
     k.get("score").forEach(label => label.text = score.toString())
+    playSound("score")
 
     // Update highscore
     if (score > highScore) {
