@@ -1,4 +1,6 @@
-import { increaseScore } from "../utils/score";
+import type { GameObj } from "kaboom";
+import { GRAVITY, JUMP_FORCE } from "../utils/constants";
+import { unit } from "../utils/scale";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -11,68 +13,94 @@ k.loadSprite("player", "/sprites/turtlebee.png")
 // Functions
 // ==============================
 
-function jumpHandler(player: any) {
+// Nose up when rising, dive when falling
+const MAX_UP_ANGLE = -25;
+const MAX_DOWN_ANGLE = 70;
 
-    k.onKeyPress("space", () => {
-        if (player.pos.y < 0) return
-        player.jump(500)
-    })
+const SPRITE_SCALE = 1 / 4;
 
-    k.onMousePress(() => {
-        if (player.pos.y < 0) return
-        player.jump(500)
-    })
+function playerTilt(player: GameObj) {
+    const target = k.clamp(player.vel.y / unit() * 0.08, MAX_UP_ANGLE, MAX_DOWN_ANGLE);
+    // Snap up on flap, rotate down progressively
+    const speed = target < player.angle ? 20 : 4;
+    player.angle = k.lerp(player.angle, target, Math.min(k.dt() * speed, 1));
 }
 
 // ==============================
 // Export
 // ==============================
 
-export function createPlayer() {
-    const player = k.add([
+/**
+ * The player hovers in place ("ready") until `flap()` is first called,
+ * then falls under gravity ("flying"). `die()` drops it onto the floor ("dead").
+ */
+export function createPlayer(world: GameObj) {
+    const player = world.add([
         k.sprite("player"),
         k.anchor("center"),
-        k.pos(32, 32),
-        k.scale(1/4),
-        k.body(),
-        k.area(),
-        k.move(0, 100),
-        k.offscreen({ destroy: true }),
-        k.state("jumping", ["jumping", "falling", "paused"]),
+        k.pos(k.width() / 3, k.height() / 2),
+        k.scale(SPRITE_SCALE * unit()),
+        k.rotate(0),
+        k.body({ gravityScale: 0 }),
+        k.area({ scale: 0.8 }),
+        k.state("ready", ["ready", "flying", "dead"]),
         "player",
-        {
-            // States
-            fallingState: false,
-            // Helpers for pause
-            currentRotation: 0,
-            currentVelocity: 0,
-        }
     ]);
 
     player.flipX = true;
-    k.setGravity(1000)
-    jumpHandler(player)
 
-
-    k.onUpdate(() => {
-        if (player.pos.y >= k.height()) {
-            k.go("gameOver")
-        }
-
-        if (player.pos.x > k.width() / 3) {
-            player.pos.x = k.width() / 3
+    let hoverTime = 0;
+    player.onUpdate(() => {
+        if (player.state === "ready") {
+            hoverTime += k.dt();
+            player.pos.y = k.height() / 2 + Math.sin(hoverTime * 4) * 8 * unit();
+        } else if (player.state === "flying") {
+            playerTilt(player);
         }
     })
 
-    k.onCollide("player", "pipe", (player) => {
-        k.addKaboom(player.pos)
-        k.go("gameOver")
-    });
+    // Keep the player at a third of the screen, at the right size, when the window is resized
+    k.onResize(() => {
+        player.pos.x = k.width() / 3
+        player.scale = k.vec2(SPRITE_SCALE * unit())
+    })
 
-    k.onCollideEnd("player", "gap", () => {
-        increaseScore(1)
-    });
+    return {
+        player,
+        /** Returns whether the player actually jumped. */
+        flap() {
+            if (player.state === "dead") return false
+            if (player.state === "ready") {
+                player.gravityScale = 1
+                player.enterState("flying")
+            }
+            // Can't fly above the screen
+            if (player.pos.y < 0) return false
+            player.jump(JUMP_FORCE * unit())
+            return true
+        },
+        /**
+         * Drops the player nose-down onto `floorY`, then calls `onLanded`.
+         * The fall runs on the root, so it keeps going while the world is frozen.
+         */
+        die(floorY: number, onLanded: () => void) {
+            player.enterState("dead")
+            player.vel = k.vec2(0, 0)
+            player.gravityScale = 0
 
-    return player
+            // Nose-down, the sprite's length is vertical: rest half of it on the floor
+            const landY = Math.max(player.pos.y, floorY - player.width * player.scale.x / 2 * 0.8)
+            let fallSpeed = 0
+            const fall = k.onUpdate(() => {
+                fallSpeed += GRAVITY * unit() * k.dt()
+                player.pos.y = Math.min(player.pos.y + fallSpeed * k.dt(), landY)
+                player.angle = k.lerp(player.angle, 90, Math.min(k.dt() * 8, 1))
+                if (player.pos.y >= landY) {
+                    player.angle = 90
+                    fall.cancel()
+                    onLanded()
+                }
+            })
+        },
+    }
 }
-

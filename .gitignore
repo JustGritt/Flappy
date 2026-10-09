@@ -29,3 +29,6 @@ yarn.lock
 # Ignore OS-specific files
 .DS_Store
 Thumbs.db
+# Playwright output
+test-results/
+playwright-report/
