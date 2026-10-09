@@ -19,6 +19,10 @@ k.loadSprite("mimir", "/sprites/cloud-mimir.png")
 
 const sprites = ["cool", "heart", "ok", "star", "suika", "thumb", "turtle", "pien", "eyes", "mimir"];
 
+// Speed (px/s) of a mid-depth cloud, and seconds between new clouds
+const CLOUD_SPEED = 110;
+const CLOUD_INTERVAL = 5;
+
 // ==============================
 // Functions
 // ==============================
@@ -55,25 +59,33 @@ export function createBackground(parent?: GameObj) {
         background.height = k.height()
     })
 
-    const spawnCloud = () => {
+    // Each cloud gets a random depth: far ones (0) are small, slow and faint,
+    // near ones (1) big, fast and opaque. z keeps them behind the pipes (z 0).
+    const addCloud = (x: number) => {
+        const depth = k.rand(0, 1)
         const comps = [
             k.sprite(randomSprite()),
-            k.pos(k.width() + 100 * unit(), k.rand(0, k.height())),
-            k.move(k.LEFT, 110 * unit()),
+            k.pos(x, k.rand(0, k.height())),
+            k.move(k.LEFT, CLOUD_SPEED * k.lerp(0.4, 1.2, depth) * unit()),
             k.anchor("center"),
-            k.scale(unit() / 2),
+            k.scale(k.lerp(0.25, 0.6, depth) * unit()),
             k.rotate(1),
+            k.opacity(k.lerp(0.55, 1, depth)),
             k.offscreen({ destroy: true, distance: 300 }),
-            k.z(-1),
+            k.z(-1 + depth * 0.9),
             "cloud"
         ]
         parent ? parent.add(comps) : k.add(comps)
     }
+    const spawnCloud = () => addCloud(k.width() + 100 * unit())
+
+    // Start with a few clouds already in the sky
+    for (let i = 0; i < 3; i++) addCloud(k.rand(0, k.width()))
 
     if (parent) {
-        parent.loop(8, spawnCloud)
+        parent.loop(CLOUD_INTERVAL, spawnCloud)
     } else {
-        k.loop(8, spawnCloud)
+        k.loop(CLOUD_INTERVAL, spawnCloud)
     }
 
     return background
