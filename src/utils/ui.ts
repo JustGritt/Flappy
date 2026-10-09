@@ -1,3 +1,4 @@
+import type { GameObj } from "kaboom";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -35,6 +36,16 @@ export function createButton(text: string, onClick: () => void) {
     })
 
     return { button, label }
+}
+
+/**
+ * Scales a text object to fit `maxWidth`, never above `maxScale`.
+ * Call it every frame (or on resize) from the text's layout code.
+ */
+export function fitText(text: GameObj, maxScale: number, maxWidth = k.width() - 32) {
+    // Kaboom reports a scaled text's width divided by its scale: undo that
+    const naturalWidth = text.width * text.scale.x
+    text.scale = k.vec2(Math.min(maxScale, maxWidth / naturalWidth))
 }
 
 /** True when the pointer is over a visible HUD button. */

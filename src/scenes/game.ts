@@ -1,11 +1,12 @@
 import { createBackground } from '../utils/background';
 import { createPlayer } from '../entities/player';
 import { createPipe, getDifficulty, resetPipes } from '../entities/pipes';
-import { createGround } from '../entities/ground';
+import { createGround, groundTop } from '../entities/ground';
 import { isPaused, pause, resetPause, resume } from "../utils/pause";
 import { createScore, increaseScore, resetScore, score } from '../utils/score';
-import { DEATH_DELAY, FIRST_PIPE_DELAY, GRAVITY, GROUND_HEIGHT } from '../utils/constants';
-import { BUTTON_SIZE, createButton, isPointerOnButton } from '../utils/ui';
+import { DEATH_DELAY, FIRST_PIPE_DELAY, GRAVITY } from '../utils/constants';
+import { unit } from '../utils/scale';
+import { BUTTON_SIZE, createButton, fitText, isPointerOnButton } from '../utils/ui';
 import { bindMuteKey, isMuted, playSound, toggleMute } from '../utils/audio';
 import { k } from "../kaboomContext";
 
@@ -16,15 +17,18 @@ import { k } from "../kaboomContext";
 function createHint() {
     const hint = k.add([
         k.text("Space / tap to flap", { size: 32 }),
-        k.pos(k.width() / 2, k.height() / 2 + 120),
+        k.pos(0, 0),
         k.anchor("center"),
+        k.scale(1),
         k.opacity(1),
         k.z(8), // below the pause overlay
         k.fixed(),
     ])
 
     hint.onUpdate(() => {
-        hint.pos.x = k.width() / 2
+        // Below the hovering bird, shrunk to fit narrow screens
+        hint.pos = k.vec2(k.width() / 2, k.height() / 2 + 120 * unit())
+        fitText(hint, 1)
         hint.opacity = k.wave(0.4, 1, k.time() * 4)
     })
 
@@ -52,7 +56,8 @@ export function createGame() {
     resetScore()
     resetPause()
     resetPipes()
-    k.setGravity(GRAVITY)
+    k.setGravity(GRAVITY * unit())
+    k.onResize(() => k.setGravity(GRAVITY * unit()))
 
     // Everything that moves lives in `world`, so pausing it freezes the game
     // while the UI (score, pause overlay) stays responsive.
@@ -98,7 +103,7 @@ export function createGame() {
         playSound("hit")
         flashScreen()
         k.shake(12)
-        die(k.height() - GROUND_HEIGHT, () => {
+        die(groundTop(), () => {
             k.wait(DEATH_DELAY, () => k.go("gameOver"))
         })
     }

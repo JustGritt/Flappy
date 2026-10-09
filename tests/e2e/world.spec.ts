@@ -94,6 +94,7 @@ test("consecutive gaps never jump further than the bird can follow", async ({ pa
             const k = window.k;
             const pipes = await import("/src/entities/pipes.ts");
             const { GAP_SHIFT_PER_SECOND } = await import("/src/utils/constants.ts");
+            const { unit } = await import("/src/utils/scale.ts");
             pipes.resetPipes();
             const world = k.add([k.timer()]);
             world.paused = true;
@@ -107,7 +108,7 @@ test("consecutive gaps never jump further than the bird can follow", async ({ pa
             world.destroy();
             const shifts = centres.slice(1).map((c, i) => Math.abs(c - centres[i]));
             return {
-                limit: GAP_SHIFT_PER_SECOND * interval,
+                limit: GAP_SHIFT_PER_SECOND * interval * unit(),
                 maxShift: Math.max(...shifts),
                 top: Math.min(...centres) - gap / 2,
                 bottom: Math.max(...centres) + gap / 2,

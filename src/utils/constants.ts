@@ -1,4 +1,13 @@
 // ==============================
+// Screen
+// ==============================
+
+// Gameplay sizes below are for a screen at least this big. Other screens scale
+// them by `unit()` (utils/scale.ts): by height, or by width on narrow screens.
+export const BASE_HEIGHT = 800;
+export const BASE_WIDTH = 500;
+
+// ==============================
 // Player
 // ==============================
 

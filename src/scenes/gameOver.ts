@@ -1,5 +1,5 @@
 import { createBackground } from '../utils/background';
-import { createGround } from '../entities/ground';
+import { createGround, groundTop } from '../entities/ground';
 import { score, highScore, isNewHighScore } from '../utils/score';
 import { RESTART_INPUT_DELAY } from '../utils/constants';
 import { bindMuteKey, playSound } from '../utils/audio';
@@ -80,12 +80,14 @@ export function createGameOver() {
         scoreText.textSize = textSize
         startText.textSize = Math.min(28, k.width() / 20)
         startText.width = k.width() - 32
-        title.scale = k.vec2(Math.min(2, k.width() / 400))
+        title.scale = k.vec2(Math.min(2, k.width() / 400, k.height() / 250))
 
-        title.pos = k.vec2(k.width() / 2, k.height() / 2 - 64 * 3)
-        highScoreText.pos = k.vec2(k.width() / 2, k.height() / 2 - 64)
-        scoreText.pos = k.vec2(k.width() / 2, k.height() / 2)
-        startText.pos = k.vec2(k.width() / 2, k.height() / 1.25)
+        // Spread over the sky, so short (landscape phone) screens fit too
+        const sky = groundTop()
+        title.pos = k.vec2(k.width() / 2, sky * 0.18)
+        highScoreText.pos = k.vec2(k.width() / 2, sky * 0.42)
+        scoreText.pos = k.vec2(k.width() / 2, sky * 0.55)
+        startText.pos = k.vec2(k.width() / 2, sky * 0.8)
     }
     layout()
     k.onResize(layout)

@@ -1,27 +1,7 @@
-import { test, expect, type Page } from "@playwright/test";
-import { openGame, startGame, startFlying, scene } from "./game";
+import { test, expect } from "@playwright/test";
+import { openGame, startGame, startFlying, scene, overflowingText } from "./game";
 
 test.beforeEach(async ({ page }) => openGame(page));
-
-/** Bounding boxes of the visible text objects, in CSS pixels. */
-async function textBoxes(page: Page) {
-    return page.evaluate(() => window.k.get("*", { recursive: true })
-        .filter((o: any) => o.text && !o.hidden && o.text.trim())
-        .map((o: any) => {
-            const r = o.screenArea ? o.screenArea().bbox() : null;
-            const w = o.width * (o.scale?.x ?? 1), h = o.height * (o.scale?.y ?? 1);
-            // Child text objects may have no pos of their own
-            const p = o.worldPos ? o.worldPos() : o.parent.worldPos();
-            return { text: o.text, left: r ? r.pos.x : p.x - w / 2, right: r ? r.pos.x + r.width : p.x + w / 2, w };
-        }));
-}
-
-function expectTextInside(boxes: { text: string; left: number; right: number }[], width: number) {
-    for (const b of boxes) {
-        expect(b.left, b.text).toBeGreaterThanOrEqual(-1);
-        expect(b.right, b.text).toBeLessThanOrEqual(width + 1);
-    }
-}
 
 test("the canvas fills the viewport with no page scrolling", async ({ page }) => {
     const r = await page.evaluate(() => ({
@@ -45,20 +25,20 @@ test("touch gestures can't zoom, scroll or select", async ({ page }) => {
 });
 
 test("menu text fits on screen", async ({ page }) => {
-    expectTextInside(await textBoxes(page), page.viewportSize()!.width);
+    expect(await overflowingText(page)).toEqual([]);
 });
 
 test("pause overlay text fits on screen", async ({ page, hasTouch }) => {
     await startFlying(page, hasTouch);
     await page.evaluate(() => window.dispatchEvent(new Event("blur")));
     await expect.poll(() => page.evaluate(() => window.k.get("pause").length)).toBe(1);
-    expectTextInside(await textBoxes(page), page.viewportSize()!.width);
+    expect(await overflowingText(page)).toEqual([]);
 });
 
 test("Game Over text fits on screen", async ({ page, hasTouch }) => {
     await startFlying(page, hasTouch);
     await expect.poll(() => scene(page), { timeout: 10_000 }).toBe("gameOver");
-    expectTextInside(await textBoxes(page), page.viewportSize()!.width);
+    expect(await overflowingText(page)).toEqual([]);
 });
 
 test("the HUD stays in the top corner after a resize", async ({ page, hasTouch }) => {

@@ -137,3 +137,30 @@ export async function scene(page: Page) {
 export async function plays(page: Page) {
     return page.evaluate(() => window.__plays);
 }
+
+/**
+ * Visible text objects that stick out past an edge of the screen.
+ * Kaboom divides a text's reported height (and its width, unless a wrap width
+ * is set) by its scale, so this measures the unscaled text itself.
+ */
+export async function overflowingText(page: Page): Promise<string[]> {
+    return page.evaluate(() => {
+        const k = window.k;
+        return k.get("*", { recursive: true })
+            .filter((o: any) => o.text?.trim() && !o.hidden)
+            .filter((o: any) => {
+                const sx = o.scale?.x ?? 1, sy = o.scale?.y ?? 1;
+                const natural = k.formatText({
+                    text: o.text, size: o.textSize, font: o.font,
+                    letterSpacing: o.letterSpacing, lineSpacing: o.lineSpacing,
+                }).width;
+                // Unwrapped: width * scale is the natural width. Wrapped: width is the wrap box.
+                const wrapped = Math.abs(o.width * sx - natural) > 1;
+                const halfW = (wrapped ? o.width : natural) * sx / 2;
+                const halfH = o.height * sy * sy / 2;
+                const { x, y } = o.worldPos ? o.worldPos() : o.parent.worldPos();
+                return x - halfW < -1 || x + halfW > k.width() + 1 || y - halfH < -1 || y + halfH > k.height() + 1;
+            })
+            .map((o: any) => o.text);
+    });
+}

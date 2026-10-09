@@ -1,4 +1,5 @@
 import type { GameObj } from "kaboom";
+import { fitText } from "./ui";
 import { k } from "../kaboomContext";
 
 export let isPaused = false;
@@ -46,6 +47,7 @@ function createPauseOverlay() {
         overlay.width = k.width();
         overlay.height = k.height();
         title.pos = k.vec2(k.width() / 2, k.height() / 2 - 100);
+        fitText(title, 1.5);
         subtext.pos = k.vec2(k.width() / 2, k.height() / 2);
         subtext.width = (k.width() - 32) / subtext.scale.x;
     });

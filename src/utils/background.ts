@@ -1,4 +1,5 @@
 import type { GameObj } from "kaboom";
+import { unit } from "./scale";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -57,10 +58,10 @@ export function createBackground(parent?: GameObj) {
     const spawnCloud = () => {
         const comps = [
             k.sprite(randomSprite()),
-            k.pos(k.width() + 100, k.rand(0, k.height())),
-            k.move(k.LEFT, 110),
+            k.pos(k.width() + 100 * unit(), k.rand(0, k.height())),
+            k.move(k.LEFT, 110 * unit()),
             k.anchor("center"),
-            k.scale(1/2),
+            k.scale(unit() / 2),
             k.rotate(1),
             k.offscreen({ destroy: true, distance: 300 }),
             k.z(-1),
