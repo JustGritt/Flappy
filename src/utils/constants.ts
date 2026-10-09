@@ -6,6 +6,13 @@ export const GRAVITY = 1000;
 export const JUMP_FORCE = 500;
 
 // ==============================
+// Ground
+// ==============================
+
+// Height of the ground strip; its top is the floor the player dies on
+export const GROUND_HEIGHT = 80;
+
+// ==============================
 // Pipes (values at score 0 → values at full difficulty)
 // ==============================
 

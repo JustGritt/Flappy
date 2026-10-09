@@ -1,6 +1,7 @@
 import { createBackground } from '../utils/background';
 import { createPlayer } from '../entities/player';
 import { createPipe, getDifficulty, resetPipes } from '../entities/pipes';
+import { createGround } from '../entities/ground';
 import { isPaused, pause, resetPause, resume } from "../utils/pause";
 import { createScore, increaseScore, resetScore, score } from '../utils/score';
 import { DEATH_DELAY, FIRST_PIPE_DELAY, GRAVITY } from '../utils/constants';
@@ -45,6 +46,7 @@ export function createGame() {
     const world = k.add([k.timer()])
 
     createBackground(world)
+    createGround(() => getDifficulty(score).speed, world)
     createScore()
     const hint = createHint()
     const { player, flap, die } = createPlayer(world)
@@ -87,10 +89,7 @@ export function createGame() {
     }
 
     k.onCollide("player", "pipe", gameOver)
-
-    player.onUpdate(() => {
-        if (player.pos.y >= k.height()) gameOver()
-    })
+    k.onCollide("player", "ground", gameOver)
 
     k.onCollideEnd("player", "gap", () => {
         if (player.state !== "dead") increaseScore(1)

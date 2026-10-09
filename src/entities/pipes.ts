@@ -4,7 +4,7 @@ import {
     PIPE_SPEED, MAX_PIPE_SPEED,
     PIPE_INTERVAL, MIN_PIPE_INTERVAL,
     MAX_DIFFICULTY_SCORE, PIPE_WIDTH, PIPE_CAP_HEIGHT, PIPE_CAP_OVERHANG,
-    GAP_SHIFT_PER_SECOND,
+    GAP_SHIFT_PER_SECOND, GROUND_HEIGHT,
 } from "../utils/constants";
 import { k } from "../kaboomContext";
 
@@ -31,7 +31,8 @@ export function resetPipes() {
 }
 
 function handlePipePosition(gap: number, interval: number) {
-    const totalHeight = k.height();
+    // Pipes and gaps fit in the sky above the ground
+    const totalHeight = k.height() - GROUND_HEIGHT;
     // Keep a small margin so a pipe is always visible at the top and bottom
     const margin = Math.min(48, (totalHeight - gap) / 2);
     let minCenter = margin + gap / 2;
@@ -57,9 +58,9 @@ function handlePipePosition(gap: number, interval: number) {
     return { topPipeHeight, bottomPipeHeight };
 }
 
-function createMiddlePart(world: GameObj, topHeight: number, bottomHeight: number, speed: number) {
+function createMiddlePart(world: GameObj, topHeight: number, gap: number, speed: number) {
     return world.add([
-        k.rect(PIPE_WIDTH, k.height() - topHeight - bottomHeight),
+        k.rect(PIPE_WIDTH, gap),
         k.pos(k.width() + 64, topHeight),
         k.anchor("top"),
         k.area(),
@@ -106,8 +107,9 @@ export function createPipe(world: GameObj, score: number) {
     const { gap, speed, interval } = getDifficulty(score);
     const { topPipeHeight, bottomPipeHeight } = handlePipePosition(gap, interval);
 
-    // Pipe parts extend 16px past the screen edge to hide their rounded ends
+    // The top pipe extends 16px past the screen edge to hide its rounded end,
+    // and the bottom one runs down behind the ground to the bottom of the screen
     createPipePart(world, topPipeHeight + 16, "top", -16, speed);
-    createMiddlePart(world, topPipeHeight, bottomPipeHeight, speed);
-    createPipePart(world, bottomPipeHeight + 16, "bot", k.height() + 16, speed);
+    createMiddlePart(world, topPipeHeight, gap, speed);
+    createPipePart(world, bottomPipeHeight + GROUND_HEIGHT + 16, "bot", k.height() + 16, speed);
 }

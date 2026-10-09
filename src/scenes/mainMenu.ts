@@ -1,6 +1,8 @@
 import { createBackground } from '../utils/background';
+import { createGround } from '../entities/ground';
 import { highScore } from '../utils/score';
 import { bindMuteKey, isMuted } from '../utils/audio';
+import { GROUND_HEIGHT, PIPE_SPEED } from '../utils/constants';
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -16,6 +18,7 @@ const rainbowWave = (idx: number) => ({
 
 export function createMainMenu() {
     createBackground()
+    createGround(() => PIPE_SPEED)
 
     const title = k.add([
         k.text("Flappy", {
@@ -62,7 +65,7 @@ export function createMainMenu() {
     bindMuteKey(updateSoundText)
 
     const layout = () => {
-        soundText.pos = k.vec2(k.width() / 2, k.height() - 40)
+        soundText.pos = k.vec2(k.width() / 2, k.height() - GROUND_HEIGHT - 32)
         startText.textSize = Math.min(48, k.width() / 14)
         startText.width = k.width() - 32
         title.pos = k.vec2(k.width() / 2, k.height() / 4)

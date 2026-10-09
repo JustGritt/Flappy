@@ -1,4 +1,5 @@
 import { createBackground } from '../utils/background';
+import { createGround } from '../entities/ground';
 import { score, highScore, isNewHighScore } from '../utils/score';
 import { RESTART_INPUT_DELAY } from '../utils/constants';
 import { bindMuteKey, playSound } from '../utils/audio';
@@ -10,6 +11,8 @@ import { k } from "../kaboomContext";
 
 export function createGameOver() {
     createBackground()
+    // Still, like the frozen world the player just died in
+    createGround(() => 0)
 
     const overlay = k.add([
         k.rect(k.width(), k.height()),
