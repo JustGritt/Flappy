@@ -23,6 +23,10 @@ export const MAX_PIPE_SPEED = 300;
 export const PIPE_INTERVAL = 3;
 export const MIN_PIPE_INTERVAL = 1.6;
 
+// How far (px) a gap's centre may move from the previous one, per second
+// between pipes. Keeps fast pipes from asking for an impossible climb or dive.
+export const GAP_SHIFT_PER_SECOND = 150;
+
 // Score at which the pipes reach full difficulty
 export const MAX_DIFFICULTY_SCORE = 40;
 

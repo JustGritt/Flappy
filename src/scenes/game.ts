@@ -1,6 +1,6 @@
 import { createBackground } from '../utils/background';
 import { createPlayer } from '../entities/player';
-import { createPipe, getDifficulty } from '../entities/pipes';
+import { createPipe, getDifficulty, resetPipes } from '../entities/pipes';
 import { isPaused, pause, resetPause, resume } from "../utils/pause";
 import { createScore, increaseScore, resetScore, score } from '../utils/score';
 import { DEATH_DELAY, FIRST_PIPE_DELAY, GRAVITY } from '../utils/constants';
@@ -37,6 +37,7 @@ function createHint() {
 export function createGame() {
     resetScore()
     resetPause()
+    resetPipes()
     k.setGravity(GRAVITY)
 
     // Everything that moves lives in `world`, so pausing it freezes the game

@@ -4,6 +4,7 @@ import {
     PIPE_SPEED, MAX_PIPE_SPEED,
     PIPE_INTERVAL, MIN_PIPE_INTERVAL,
     MAX_DIFFICULTY_SCORE, PIPE_WIDTH, PIPE_CAP_HEIGHT, PIPE_CAP_OVERHANG,
+    GAP_SHIFT_PER_SECOND,
 } from "../utils/constants";
 import { k } from "../kaboomContext";
 
@@ -21,11 +22,37 @@ export function getDifficulty(score: number) {
     };
 }
 
-function handlePipePosition(gap: number) {
+// Centre of the previous gap, so the next one can't be out of reach
+let lastGapCenter: number | null = null;
+
+/** Forget the previous gap. Call at the start of each game. */
+export function resetPipes() {
+    lastGapCenter = null;
+}
+
+function handlePipePosition(gap: number, interval: number) {
     const totalHeight = k.height();
     // Keep a small margin so a pipe is always visible at the top and bottom
     const margin = Math.min(48, (totalHeight - gap) / 2);
-    const topPipeHeight = k.rand(margin, totalHeight - gap - margin);
+    let minCenter = margin + gap / 2;
+    let maxCenter = totalHeight - margin - gap / 2;
+
+    // The bird can only climb or dive so far before the next pipe arrives
+    if (lastGapCenter !== null) {
+        const maxShift = GAP_SHIFT_PER_SECOND * interval;
+        const lo = Math.max(minCenter, lastGapCenter - maxShift);
+        const hi = Math.min(maxCenter, lastGapCenter + maxShift);
+        // Empty range only if the window shrank a lot: fall back to anywhere on screen
+        if (lo <= hi) {
+            minCenter = lo;
+            maxCenter = hi;
+        }
+    }
+
+    const center = k.rand(minCenter, maxCenter);
+    lastGapCenter = center;
+
+    const topPipeHeight = center - gap / 2;
     const bottomPipeHeight = totalHeight - topPipeHeight - gap;
     return { topPipeHeight, bottomPipeHeight };
 }
@@ -76,8 +103,8 @@ function createPipePart(world: GameObj, height: number, anchor: "top" | "bot", y
 // ==============================
 
 export function createPipe(world: GameObj, score: number) {
-    const { gap, speed } = getDifficulty(score);
-    const { topPipeHeight, bottomPipeHeight } = handlePipePosition(gap);
+    const { gap, speed, interval } = getDifficulty(score);
+    const { topPipeHeight, bottomPipeHeight } = handlePipePosition(gap, interval);
 
     // Pipe parts extend 16px past the screen edge to hide their rounded ends
     createPipePart(world, topPipeHeight + 16, "top", -16, speed);
