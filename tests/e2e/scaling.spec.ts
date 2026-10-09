@@ -57,8 +57,8 @@ for (const size of SIZES) {
                 const gaps = k.get("gap", { recursive: true });
                 return {
                     groundHeight: ground.height, groundY: ground.pos.y, height: k.height(),
-                    gapTop: Math.min(...gaps.map((g: any) => g.pos.y)),
-                    gapBottom: Math.max(...gaps.map((g: any) => g.pos.y + g.height)),
+                    gapTop: Math.min(...gaps.map((g: any) => g.worldPos().y)),
+                    gapBottom: Math.max(...gaps.map((g: any) => g.worldPos().y + g.height)),
                 };
             });
             expect(r.groundHeight).toBeGreaterThanOrEqual(30);

@@ -107,8 +107,10 @@ export async function autopilot(page: Page) {
         k.onUpdate(() => {
             const p = k.get("player", { recursive: true })[0];
             if (!window.__autopilot || !p || p.state !== "flying") return;
-            // Keep aiming at a gap until the bird is clear of its pipes
+            // Keep aiming at a gap until the bird is clear of its pipes.
+            // Gaps are children of their pipe pair, so use world positions.
             const gaps = k.get("gap", { recursive: true })
+                .map((g: any) => ({ pos: g.worldPos(), width: g.width, height: g.height }))
                 .filter((g: any) => g.pos.x + g.width * 1.6 > p.pos.x)
                 .sort((a: any, b: any) => a.pos.x - b.pos.x);
             p.pos.y = gaps.length ? gaps[0].pos.y + gaps[0].height / 2 : k.height() / 2;

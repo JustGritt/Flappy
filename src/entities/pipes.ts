@@ -5,6 +5,7 @@ import {
     PIPE_INTERVAL, MIN_PIPE_INTERVAL,
     MAX_DIFFICULTY_SCORE, PIPE_WIDTH, PIPE_CAP_HEIGHT, PIPE_CAP_OVERHANG,
     GAP_SHIFT_PER_SECOND,
+    MOVING_PIPES_SCORE, MOVING_PIPE_CHANCE, MOVING_PIPE_AMPLITUDE, MOVING_PIPE_PERIOD,
 } from "../utils/constants";
 import { unit } from "../utils/scale";
 import { groundTop } from "./ground";
@@ -24,70 +25,61 @@ export function getDifficulty(score: number) {
     };
 }
 
-// Centre of the previous gap, so the next one can't be out of reach
+// The previous gap's centre and how far it bobs, so the next one can't be out of reach
 let lastGapCenter: number | null = null;
+let lastAmplitude = 0;
 
 /** Forget the previous gap. Call at the start of each game. */
 export function resetPipes() {
     lastGapCenter = null;
+    lastAmplitude = 0;
 }
 
-function handlePipePosition(gap: number, interval: number) {
+/**
+ * Picks the gap's resting centre. A gap that bobs by `amplitude` must stay in
+ * the sky at both extremes, and every point it can reach must be within a
+ * climb or dive of every point the previous gap could have been at.
+ * Returns null when no centre satisfies that (the caller then tries without bobbing).
+ */
+function pickGapCenter(gap: number, interval: number, amplitude: number) {
     // Pipes and gaps fit in the sky above the ground
-    const totalHeight = groundTop();
+    const sky = groundTop();
     // Keep a small margin so a pipe is always visible at the top and bottom
-    const margin = Math.min(48 * unit(), (totalHeight - gap) / 2);
-    let minCenter = margin + gap / 2;
-    let maxCenter = totalHeight - margin - gap / 2;
+    const margin = Math.min(48 * unit(), (sky - gap) / 2);
+    let lo = margin + gap / 2 + amplitude;
+    let hi = sky - margin - gap / 2 - amplitude;
+    if (lo > hi) return null;
 
     // The bird can only climb or dive so far before the next pipe arrives
     if (lastGapCenter !== null) {
-        const maxShift = GAP_SHIFT_PER_SECOND * interval * unit();
-        const lo = Math.max(minCenter, lastGapCenter - maxShift);
-        const hi = Math.min(maxCenter, lastGapCenter + maxShift);
-        // Empty range only if the window shrank a lot: fall back to anywhere on screen
-        if (lo <= hi) {
-            minCenter = lo;
-            maxCenter = hi;
+        const maxShift = GAP_SHIFT_PER_SECOND * interval * unit() - lastAmplitude - amplitude;
+        const shiftLo = Math.max(lo, lastGapCenter - maxShift);
+        const shiftHi = Math.min(hi, lastGapCenter + maxShift);
+        if (shiftLo <= shiftHi) {
+            lo = shiftLo;
+            hi = shiftHi;
+        } else if (amplitude > 0) {
+            return null;
         }
+        // A static gap with an empty range only happens if the window shrank a
+        // lot: fall back to anywhere in the sky
     }
-
-    const center = k.rand(minCenter, maxCenter);
-    lastGapCenter = center;
-
-    const topPipeHeight = center - gap / 2;
-    const bottomPipeHeight = totalHeight - topPipeHeight - gap;
-    return { topPipeHeight, bottomPipeHeight };
+    return k.rand(lo, hi);
 }
 
 // Pipes spawn just past the right edge of the screen
 const spawnX = () => k.width() + 64 * unit();
 
-function createMiddlePart(world: GameObj, topHeight: number, gap: number, speed: number) {
-    return world.add([
-        k.rect(PIPE_WIDTH * unit(), gap),
-        k.pos(spawnX(), topHeight),
-        k.anchor("top"),
-        k.area(),
-        k.opacity(0),
-        k.move(k.LEFT, speed),
-        k.offscreen({ destroy: true }),
-        "gap",
-    ]);
-}
-
-function createPipePart(world: GameObj, height: number, anchor: "top" | "bot", yPosition: number, speed: number) {
+function createPipePart(pair: GameObj, height: number, anchor: "top" | "bot", yPosition: number) {
     const u = unit();
     const outline = Math.max(2, 4 * u);
-    const pipe = world.add([
+    const pipe = pair.add([
         k.rect(PIPE_WIDTH * u, height, { radius: 4 * u }),
         k.color(150, 111, 51),
         k.outline(outline, k.rgb(110, 78, 32)),
         k.anchor(anchor),
-        k.pos(spawnX(), yPosition),
+        k.pos(0, yPosition),
         k.area(),
-        k.move(k.LEFT, speed),
-        k.offscreen({ destroy: true }),
         "pipe",
     ]);
 
@@ -110,13 +102,57 @@ function createPipePart(world: GameObj, height: number, anchor: "top" | "bot", y
 // Export
 // ==============================
 
+/**
+ * Spawns a pipe pair: a parent tagged "pipe-pair" that moves left, holding the
+ * top "pipe", the invisible scoring "gap" and the bottom "pipe", so they stay
+ * aligned when the pair bobs. From MOVING_PIPES_SCORE some pairs bob up and
+ * down, never two in a row.
+ */
 export function createPipe(world: GameObj, score: number) {
     const { gap, speed, interval } = getDifficulty(score);
-    const { topPipeHeight, bottomPipeHeight } = handlePipePosition(gap, interval);
 
-    // The top pipe extends 16px past the screen edge to hide its rounded end,
-    // and the bottom one runs down behind the ground to the bottom of the screen
-    createPipePart(world, topPipeHeight + 16, "top", -16, speed);
-    createMiddlePart(world, topPipeHeight, gap, speed);
-    createPipePart(world, bottomPipeHeight + (k.height() - groundTop()) + 16, "bot", k.height() + 16, speed);
+    const wantsToMove = score >= MOVING_PIPES_SCORE && lastAmplitude === 0 && k.rand(0, 1) < MOVING_PIPE_CHANCE;
+    let amplitude = wantsToMove ? MOVING_PIPE_AMPLITUDE * unit() : 0;
+    let center = pickGapCenter(gap, interval, amplitude);
+    if (center === null) {
+        amplitude = 0;
+        center = pickGapCenter(gap, interval, 0)!;
+    }
+    lastGapCenter = center;
+    lastAmplitude = amplitude;
+
+    const topHeight = center - gap / 2;
+    const bottomHeight = groundTop() - topHeight - gap;
+
+    const pair = world.add([
+        k.pos(spawnX(), 0),
+        k.move(k.LEFT, speed),
+        k.offscreen({ destroy: true, distance: PIPE_WIDTH * unit() }),
+        "pipe-pair",
+        { amplitude },
+    ]);
+
+    // The top pipe extends past the screen edge (16px plus however far the
+    // pair bobs down) to hide its rounded end, and the bottom one runs down
+    // behind the ground to the bottom of the screen
+    const overshoot = 16 + amplitude;
+    createPipePart(pair, topHeight + overshoot, "top", -overshoot);
+    pair.add([
+        k.rect(PIPE_WIDTH * unit(), gap),
+        k.pos(0, topHeight),
+        k.anchor("top"),
+        k.area(),
+        k.opacity(0),
+        "gap",
+    ]);
+    createPipePart(pair, bottomHeight + (k.height() - groundTop()) + 16, "bot", k.height() + 16);
+
+    if (amplitude > 0) {
+        // Its own update, so the bobbing freezes with the world
+        let time = k.rand(0, MOVING_PIPE_PERIOD);
+        pair.onUpdate(() => {
+            time += k.dt();
+            pair.pos.y = Math.sin(time / MOVING_PIPE_PERIOD * Math.PI * 2) * amplitude;
+        });
+    }
 }
