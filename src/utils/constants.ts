@@ -51,7 +51,7 @@ export const SCORE_MILESTONE = 10;
 // Game over
 // ==============================
 
-// Delay before the game over scene, so the crash is visible
+// Time the player lies on the ground before the game over scene
 export const DEATH_DELAY = 0.8;
 
 // Ignore restart input right after dying to avoid accidental restarts

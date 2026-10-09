@@ -1,5 +1,5 @@
 import type { GameObj } from "kaboom";
-import { JUMP_FORCE } from "../utils/constants";
+import { GRAVITY, JUMP_FORCE } from "../utils/constants";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -29,7 +29,7 @@ function playerTilt(player: GameObj) {
 
 /**
  * The player hovers in place ("ready") until `flap()` is first called,
- * then falls under gravity ("flying"). `die()` freezes it in place.
+ * then falls under gravity ("flying"). `die()` drops it onto the floor ("dead").
  */
 export function createPlayer(world: GameObj) {
     const player = world.add([
@@ -75,10 +75,28 @@ export function createPlayer(world: GameObj) {
             player.jump(JUMP_FORCE)
             return true
         },
-        die() {
+        /**
+         * Drops the player nose-down onto `floorY`, then calls `onLanded`.
+         * The fall runs on the root, so it keeps going while the world is frozen.
+         */
+        die(floorY: number, onLanded: () => void) {
             player.enterState("dead")
             player.vel = k.vec2(0, 0)
             player.gravityScale = 0
+
+            // Nose-down, the sprite's length is vertical: rest half of it on the floor
+            const landY = Math.max(player.pos.y, floorY - player.width * player.scale.x / 2 * 0.8)
+            let fallSpeed = 0
+            const fall = k.onUpdate(() => {
+                fallSpeed += GRAVITY * k.dt()
+                player.pos.y = Math.min(player.pos.y + fallSpeed * k.dt(), landY)
+                player.angle = k.lerp(player.angle, 90, Math.min(k.dt() * 8, 1))
+                if (player.pos.y >= landY) {
+                    player.angle = 90
+                    fall.cancel()
+                    onLanded()
+                }
+            })
         },
     }
 }

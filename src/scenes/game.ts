@@ -4,7 +4,7 @@ import { createPipe, getDifficulty, resetPipes } from '../entities/pipes';
 import { createGround } from '../entities/ground';
 import { isPaused, pause, resetPause, resume } from "../utils/pause";
 import { createScore, increaseScore, resetScore, score } from '../utils/score';
-import { DEATH_DELAY, FIRST_PIPE_DELAY, GRAVITY } from '../utils/constants';
+import { DEATH_DELAY, FIRST_PIPE_DELAY, GRAVITY, GROUND_HEIGHT } from '../utils/constants';
 import { BUTTON_SIZE, createButton, isPointerOnButton } from '../utils/ui';
 import { bindMuteKey, isMuted, playSound, toggleMute } from '../utils/audio';
 import { k } from "../kaboomContext";
@@ -29,6 +29,19 @@ function createHint() {
     })
 
     return hint
+}
+
+/** Brief white flash over everything, for impacts. */
+function flashScreen() {
+    const flash = k.add([
+        k.rect(k.width(), k.height()),
+        k.color(255, 255, 255),
+        k.opacity(0.8),
+        k.fixed(),
+        k.z(20),
+    ])
+    k.tween(0.8, 0, 0.3, v => flash.opacity = v, k.easings.easeOutQuad)
+        .onEnd(() => flash.destroy())
 }
 
 // ==============================
@@ -77,15 +90,17 @@ export function createGame() {
     // Death
     // ==============================
 
+    // Freeze the world, then let the bird fall to the ground before Game Over
     const gameOver = () => {
         if (player.state === "dead") return
-        die()
         world.paused = true
         pauseButton.hidden = true
         playSound("hit")
-        k.addKaboom(player.pos)
+        flashScreen()
         k.shake(12)
-        k.wait(DEATH_DELAY, () => k.go("gameOver"))
+        die(k.height() - GROUND_HEIGHT, () => {
+            k.wait(DEATH_DELAY, () => k.go("gameOver"))
+        })
     }
 
     k.onCollide("player", "pipe", gameOver)
