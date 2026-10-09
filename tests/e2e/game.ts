@@ -166,3 +166,17 @@ export async function overflowingText(page: Page): Promise<string[]> {
             .map((o: any) => o.text);
     });
 }
+
+/** Plays a run that ends with `points`, and waits for the Game Over screen. */
+export async function gameOverWithScore(page: Page, hasTouch: boolean, points: number) {
+    await startFlying(page, hasTouch);
+    // The browser resolves this import, so it's the game's own score module
+    if (points > 0) await page.evaluate(`import("/src/utils/score.ts").then(s => s.increaseScore(${points}))`);
+    await expect.poll(() => scene(page), { timeout: 10_000 }).toBe("gameOver");
+}
+
+/** Texts on screen, by content. */
+export async function texts(page: Page): Promise<string[]> {
+    return page.evaluate(() => window.k.get("*", { recursive: true })
+        .filter((o: any) => o.text?.trim() && !o.hidden).map((o: any) => o.text));
+}

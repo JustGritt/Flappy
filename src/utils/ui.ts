@@ -48,6 +48,14 @@ export function fitText(text: GameObj, maxScale: number, maxWidth = k.width() - 
     text.scale = k.vec2(Math.min(maxScale, maxWidth / naturalWidth))
 }
 
+/** Text transform for celebratory titles: rainbow letters that wave and wobble. */
+export const rainbowWave = (idx: number) => ({
+    color: k.hsl2rgb((k.time() * 0.2 + idx * 0.1) % 1, 0.7, 0.8),
+    pos: k.vec2(0, k.wave(-4, 4, k.time() * 4 + idx * 0.5)),
+    scale: k.wave(1, 1.2, k.time() * 3 + idx),
+    angle: k.wave(-9, 9, k.time() * 3 + idx),
+})
+
 /** True when the pointer is over a visible HUD button. */
 export function isPointerOnButton() {
     return k.get("ui-button").some(b => !b.hidden && b.isHovering())
