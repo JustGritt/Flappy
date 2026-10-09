@@ -3,6 +3,7 @@ import { createGround, groundTop } from '../entities/ground';
 import { score, highScore, isNewHighScore } from '../utils/score';
 import { RESTART_INPUT_DELAY } from '../utils/constants';
 import { bindMuteKey, playSound } from '../utils/audio';
+import { fadeIn, goWithFade } from "../utils/transition";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -10,6 +11,7 @@ import { k } from "../kaboomContext";
 // ==============================
 
 export function createGameOver() {
+    fadeIn()
     createBackground()
     // Still, like the frozen world the player just died in
     createGround(() => 0)
@@ -101,12 +103,12 @@ export function createGameOver() {
     k.wait(RESTART_INPUT_DELAY, () => canRestart = true)
 
     const restart = () => {
-        if (canRestart) k.go("game")
+        if (canRestart) goWithFade("game")
     }
 
     k.onKeyPress("space", restart)
     k.onMousePress(restart)
-    k.onKeyPress("escape", () => k.go("menu"))
+    k.onKeyPress("escape", () => goWithFade("menu"))
     bindMuteKey()
 
     if (isNewHighScore) playSound("highscore")

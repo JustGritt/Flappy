@@ -4,6 +4,7 @@ import { highScore } from '../utils/score';
 import { bindMuteKey, isMuted } from '../utils/audio';
 import { PIPE_SPEED } from '../utils/constants';
 import { unit } from '../utils/scale';
+import { fadeIn, goWithFade } from "../utils/transition";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -18,6 +19,7 @@ const rainbowWave = (idx: number) => ({
 })
 
 export function createMainMenu() {
+    fadeIn()
     createBackground()
     createGround(() => PIPE_SPEED * unit())
 
@@ -80,6 +82,6 @@ export function createMainMenu() {
         startText.hidden = !startText.hidden
     })
 
-    k.onKeyPress("space", () => k.go("game"))
-    k.onMousePress(() => k.go("game"))
+    k.onKeyPress("space", () => goWithFade("game"))
+    k.onMousePress(() => goWithFade("game"))
 }

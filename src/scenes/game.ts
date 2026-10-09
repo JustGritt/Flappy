@@ -8,6 +8,7 @@ import { DEATH_DELAY, FIRST_PIPE_DELAY, GRAVITY } from '../utils/constants';
 import { unit } from '../utils/scale';
 import { BUTTON_SIZE, createButton, fitText, isPointerOnButton } from '../utils/ui';
 import { bindMuteKey, isMuted, playSound, toggleMute } from '../utils/audio';
+import { fadeIn, goWithFade } from "../utils/transition";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -53,6 +54,7 @@ function flashScreen() {
 // ==============================
 
 export function createGame() {
+    fadeIn()
     resetScore()
     resetPause()
     resetPipes()
@@ -104,7 +106,7 @@ export function createGame() {
         flashScreen()
         k.shake(12)
         die(groundTop(), () => {
-            k.wait(DEATH_DELAY, () => k.go("gameOver"))
+            k.wait(DEATH_DELAY, () => goWithFade("gameOver"))
         })
     }
 
@@ -119,7 +121,7 @@ export function createGame() {
     // Controls
     // ==============================
 
-    k.onKeyPress("escape", () => k.go("menu"))
+    k.onKeyPress("escape", () => goWithFade("menu"))
 
     const togglePause = () => {
         if (player.state === "dead") return

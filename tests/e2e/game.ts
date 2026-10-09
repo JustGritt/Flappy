@@ -47,6 +47,8 @@ export async function openGame(page: Page) {
     await page.addInitScript(stubMissingApis);
     await page.goto("/");
     await page.waitForFunction(() => window.k && window.k.get("*").length > 2);
+    // Let the menu finish fading in
+    await page.waitForFunction(() => window.k.get("fade").length === 0);
     // Kaboom listens for keys on the canvas
     await page.locator("#game").focus();
     // Record every sound played
