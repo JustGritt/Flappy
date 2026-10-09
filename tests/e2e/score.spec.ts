@@ -33,7 +33,7 @@ test("passing a pipe scores a point and pops the label", async ({ page, hasTouch
     expect(track["1"].endScale).toBeCloseTo(1, 2);
     expect(track["1"].minBlue).toBe(255);
     expect(await plays(page)).toContain("score");
-    expect(await page.evaluate(() => localStorage.getItem("flappy.highScore"))).not.toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem("flappy.highScore.normal"))).not.toBeNull();
 });
 
 test("every 10th point flashes gold with the milestone sound", async ({ page, hasTouch }) => {

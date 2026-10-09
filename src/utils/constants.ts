@@ -52,7 +52,7 @@ export const MOVING_PIPE_CHANCE = 0.5;
 export const MOVING_PIPE_AMPLITUDE = 60;
 export const MOVING_PIPE_PERIOD = 2.4;
 
-// Score at which the pipes reach full difficulty
+// Score at which the pipes reach full difficulty in Normal mode (see utils/modes.ts)
 export const MAX_DIFFICULTY_SCORE = 40;
 
 // Delay between the first flap and the first pipe

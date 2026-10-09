@@ -3,11 +3,12 @@ import {
     GAP_SIZE, MIN_GAP_SIZE,
     PIPE_SPEED, MAX_PIPE_SPEED,
     PIPE_INTERVAL, MIN_PIPE_INTERVAL,
-    MAX_DIFFICULTY_SCORE, PIPE_WIDTH, PIPE_CAP_HEIGHT, PIPE_CAP_OVERHANG,
+    PIPE_WIDTH, PIPE_CAP_HEIGHT, PIPE_CAP_OVERHANG,
     GAP_SHIFT_PER_SECOND,
     MOVING_PIPES_SCORE, MOVING_PIPE_CHANCE, MOVING_PIPE_AMPLITUDE, MOVING_PIPE_PERIOD,
 } from "../utils/constants";
 import { unit } from "../utils/scale";
+import { MODES, currentMode } from "../utils/modes";
 import { groundTop } from "./ground";
 import { k } from "../kaboomContext";
 
@@ -15,13 +16,17 @@ import { k } from "../kaboomContext";
 // Functions
 // ==============================
 
-/** Pipe settings for a given score (in screen pixels), ramping linearly up to MAX_DIFFICULTY_SCORE. */
+/**
+ * Pipe settings for a given score (in screen pixels) in the current mode,
+ * ramping linearly up to the mode's `rampScore`.
+ */
 export function getDifficulty(score: number) {
-    const t = Math.min(score / MAX_DIFFICULTY_SCORE, 1);
+    const mode = MODES[currentMode()];
+    const t = Math.min(score / mode.rampScore, 1);
     return {
-        gap: k.lerp(GAP_SIZE, MIN_GAP_SIZE, t) * unit(),
-        speed: k.lerp(PIPE_SPEED, MAX_PIPE_SPEED, t) * unit(),
-        interval: k.lerp(PIPE_INTERVAL, MIN_PIPE_INTERVAL, t),
+        gap: k.lerp(GAP_SIZE, MIN_GAP_SIZE, t) * mode.gap * unit(),
+        speed: k.lerp(PIPE_SPEED, MAX_PIPE_SPEED, t) * mode.speed * unit(),
+        interval: k.lerp(PIPE_INTERVAL, MIN_PIPE_INTERVAL, t) * mode.interval,
     };
 }
 
