@@ -47,6 +47,8 @@ export async function openGame(page: Page) {
     await page.addInitScript(stubMissingApis);
     await page.goto("/");
     await page.waitForFunction(() => window.k && window.k.get("*").length > 2);
+    // Let the menu finish fading in
+    await page.waitForFunction(() => window.k.get("fade").length === 0);
     // Kaboom listens for keys on the canvas
     await page.locator("#game").focus();
     // Record every sound played
@@ -105,8 +107,10 @@ export async function autopilot(page: Page) {
         k.onUpdate(() => {
             const p = k.get("player", { recursive: true })[0];
             if (!window.__autopilot || !p || p.state !== "flying") return;
-            // Keep aiming at a gap until the bird is clear of its pipes
+            // Keep aiming at a gap until the bird is clear of its pipes.
+            // Gaps are children of their pipe pair, so use world positions.
             const gaps = k.get("gap", { recursive: true })
+                .map((g: any) => ({ pos: g.worldPos(), width: g.width, height: g.height }))
                 .filter((g: any) => g.pos.x + g.width * 1.6 > p.pos.x)
                 .sort((a: any, b: any) => a.pos.x - b.pos.x);
             p.pos.y = gaps.length ? gaps[0].pos.y + gaps[0].height / 2 : k.height() / 2;
@@ -139,7 +143,8 @@ export async function plays(page: Page) {
 }
 
 /**
- * Visible text objects that stick out past an edge of the screen.
+ * Text objects that stick out past an edge of the screen. Hidden ones count
+ * too, since blinking prompts are hidden half the time.
  * Kaboom divides a text's reported height (and its width, unless a wrap width
  * is set) by its scale, so this measures the unscaled text itself.
  */
@@ -147,7 +152,7 @@ export async function overflowingText(page: Page): Promise<string[]> {
     return page.evaluate(() => {
         const k = window.k;
         return k.get("*", { recursive: true })
-            .filter((o: any) => o.text?.trim() && !o.hidden)
+            .filter((o: any) => o.text?.trim())
             .filter((o: any) => {
                 const sx = o.scale?.x ?? 1, sy = o.scale?.y ?? 1;
                 const natural = k.formatText({
@@ -162,5 +167,44 @@ export async function overflowingText(page: Page): Promise<string[]> {
                 return x - halfW < -1 || x + halfW > k.width() + 1 || y - halfH < -1 || y + halfH > k.height() + 1;
             })
             .map((o: any) => o.text);
+    });
+}
+
+/** Plays a run that ends with `points`, and waits for the Game Over screen. */
+export async function gameOverWithScore(page: Page, hasTouch: boolean, points: number) {
+    await startFlying(page, hasTouch);
+    // The browser resolves this import, so it's the game's own score module
+    if (points > 0) await page.evaluate(`import("/src/utils/score.ts").then(s => s.increaseScore(${points}))`);
+    await expect.poll(() => scene(page), { timeout: 10_000 }).toBe("gameOver");
+}
+
+/** Texts on screen, by content. */
+export async function texts(page: Page): Promise<string[]> {
+    return page.evaluate(() => window.k.get("*", { recursive: true })
+        .filter((o: any) => o.text?.trim() && !o.hidden).map((o: any) => o.text));
+}
+
+/**
+ * Pairs of root-level texts (and medals) whose vertical extents overlap, for
+ * screens laid out as a single centred column. Includes hidden (blinking) text.
+ */
+export async function overlappingRows(page: Page): Promise<string[]> {
+    return page.evaluate(() => {
+        const k = window.k;
+        const rows: { name: string; top: number; bottom: number }[] = [];
+        for (const o of k.get("*")) {
+            if (o.is("medal")) rows.push({ name: "medal", top: o.pos.y - o.radius, bottom: o.pos.y + o.radius });
+            else if (o.text?.trim() && !o.is("ui-button")) {
+                // Kaboom reports a scaled text's height divided by its scale
+                const h = o.height * (o.scale?.y ?? 1) ** 2;
+                rows.push({ name: o.text, top: o.pos.y - h / 2, bottom: o.pos.y + h / 2 });
+            }
+        }
+        rows.sort((a, b) => a.top - b.top);
+        const overlaps: string[] = [];
+        for (let i = 1; i < rows.length; i++) {
+            if (rows[i].top < rows[i - 1].bottom - 1) overlaps.push(`${rows[i - 1].name} / ${rows[i].name}`);
+        }
+        return overlaps;
     });
 }

@@ -26,6 +26,39 @@ function playerTilt(player: GameObj) {
     player.angle = k.lerp(player.angle, target, Math.min(k.dt() * speed, 1));
 }
 
+// Squash-and-stretch on flap: thinner and taller, easing back to normal
+const SQUASH_TIME = 0.15;
+const SQUASH = 0.1;
+
+const PUFF_COUNT = 6;
+const PUFF_LIFETIME = 0.35;
+
+/** A few feathers puffing out behind the player's tail, fading out. */
+function puffFeathers(world: GameObj, player: GameObj) {
+    const u = unit();
+    const tail = player.pos.sub(player.width * player.scale.x * 0.35, -player.height * player.scale.y * 0.1);
+    for (let i = 0; i < PUFF_COUNT; i++) {
+        // Spread out backwards and down, away from the jump
+        const vel = k.Vec2.fromAngle(k.rand(110, 200)).scale(k.rand(120, 240) * u);
+        const feather = world.add([
+            k.circle(k.rand(4, 8) * u),
+            k.pos(tail),
+            k.color(255, 255, 255),
+            k.opacity(0.9),
+            k.anchor("center"),
+            "feather",
+        ]);
+        // Its own update (not a tween or lifespan), so it freezes with the world
+        let age = 0;
+        feather.onUpdate(() => {
+            age += k.dt();
+            feather.pos = feather.pos.add(vel.scale(k.dt()));
+            feather.opacity = 0.9 * (1 - age / PUFF_LIFETIME);
+            if (age >= PUFF_LIFETIME) feather.destroy();
+        });
+    }
+}
+
 // ==============================
 // Export
 // ==============================
@@ -50,7 +83,13 @@ export function createPlayer(world: GameObj) {
     player.flipX = true;
 
     let hoverTime = 0;
+    let squashLeft = 0;
     player.onUpdate(() => {
+        if (squashLeft > 0) {
+            squashLeft = Math.max(0, squashLeft - k.dt());
+            const s = SQUASH * squashLeft / SQUASH_TIME;
+            player.scale = k.vec2(1 - s, 1 + s).scale(SPRITE_SCALE * unit());
+        }
         if (player.state === "ready") {
             hoverTime += k.dt();
             player.pos.y = k.height() / 2 + Math.sin(hoverTime * 4) * 8 * unit();
@@ -77,6 +116,8 @@ export function createPlayer(world: GameObj) {
             // Can't fly above the screen
             if (player.pos.y < 0) return false
             player.jump(JUMP_FORCE * unit())
+            squashLeft = SQUASH_TIME
+            puffFeathers(world, player)
             return true
         },
         /**

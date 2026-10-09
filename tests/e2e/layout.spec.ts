@@ -59,3 +59,12 @@ test("the HUD stays in the top corner after a resize", async ({ page, hasTouch }
     }
     expect(r.ground).toBeLessThan(r.h);
 });
+
+test("the tab and home-screen icons load", async ({ page, request }) => {
+    for (const rel of ["icon", "apple-touch-icon"]) {
+        const href = await page.locator(`link[rel="${rel}"]`).getAttribute("href");
+        const res = await request.get(href!);
+        expect(res.ok(), rel).toBe(true);
+        expect(res.headers()["content-type"], rel).toContain("image/png");
+    }
+});

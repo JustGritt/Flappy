@@ -1,5 +1,6 @@
 import type { GameObj } from "kaboom";
 import { unit } from "./scale";
+import { SKY_PHASE_POINTS, SKY_TRANSITION_POINTS } from "./constants";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -19,6 +20,18 @@ k.loadSprite("mimir", "/sprites/cloud-mimir.png")
 
 const sprites = ["cool", "heart", "ok", "star", "suika", "thumb", "turtle", "pien", "eyes", "mimir"];
 
+// Sky colours the run cycles through as the score rises. Each is dark enough
+// for the white score text to stay readable.
+const SKY_PHASES = [
+    k.rgb(52, 152, 219),    // day
+    k.rgb(205, 100, 80),    // sunset
+    k.rgb(24, 32, 72),      // night
+];
+
+// Speed (px/s) of a mid-depth cloud, and seconds between new clouds
+const CLOUD_SPEED = 110;
+const CLOUD_INTERVAL = 5;
+
 // ==============================
 // Functions
 // ==============================
@@ -36,14 +49,25 @@ function randomSprite() {
 // ==============================
 
 /**
+ * Sky colour for a score: each phase lasts SKY_PHASE_POINTS, blending into
+ * the next over its last SKY_TRANSITION_POINTS, and the cycle loops.
+ */
+export function skyColor(score: number) {
+    const phase = Math.floor(score / SKY_PHASE_POINTS) % SKY_PHASES.length;
+    const into = score % SKY_PHASE_POINTS;
+    const t = k.clamp((into - (SKY_PHASE_POINTS - SKY_TRANSITION_POINTS)) / SKY_TRANSITION_POINTS, 0, 1);
+    return SKY_PHASES[phase].lerp(SKY_PHASES[(phase + 1) % SKY_PHASES.length], t);
+}
+
+/**
  * Adds the sky and the cloud spawner. Clouds are added to `parent` (and its
  * timer drives the spawner) so pausing the parent also freezes them.
  * Call once per scene: it handles window resizes itself.
  */
-export function createBackground(parent?: GameObj) {
+export function createBackground(parent?: GameObj, color = SKY_PHASES[0]) {
     const background = k.add([
         k.rect(k.width(), k.height()),
-        k.color(52, 152, 219),
+        k.color(color),
         k.pos(0, 0),
         k.fixed(),
         k.z(-2),
@@ -55,25 +79,33 @@ export function createBackground(parent?: GameObj) {
         background.height = k.height()
     })
 
-    const spawnCloud = () => {
+    // Each cloud gets a random depth: far ones (0) are small, slow and faint,
+    // near ones (1) big, fast and opaque. z keeps them behind the pipes (z 0).
+    const addCloud = (x: number) => {
+        const depth = k.rand(0, 1)
         const comps = [
             k.sprite(randomSprite()),
-            k.pos(k.width() + 100 * unit(), k.rand(0, k.height())),
-            k.move(k.LEFT, 110 * unit()),
+            k.pos(x, k.rand(0, k.height())),
+            k.move(k.LEFT, CLOUD_SPEED * k.lerp(0.4, 1.2, depth) * unit()),
             k.anchor("center"),
-            k.scale(unit() / 2),
+            k.scale(k.lerp(0.25, 0.6, depth) * unit()),
             k.rotate(1),
+            k.opacity(k.lerp(0.55, 1, depth)),
             k.offscreen({ destroy: true, distance: 300 }),
-            k.z(-1),
+            k.z(-1 + depth * 0.9),
             "cloud"
         ]
         parent ? parent.add(comps) : k.add(comps)
     }
+    const spawnCloud = () => addCloud(k.width() + 100 * unit())
+
+    // Start with a few clouds already in the sky
+    for (let i = 0; i < 3; i++) addCloud(k.rand(0, k.width()))
 
     if (parent) {
-        parent.loop(8, spawnCloud)
+        parent.loop(CLOUD_INTERVAL, spawnCloud)
     } else {
-        k.loop(8, spawnCloud)
+        k.loop(CLOUD_INTERVAL, spawnCloud)
     }
 
     return background

@@ -1,6 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 5199;
+// A port of its own, and always a fresh server: a long-running dev server
+// may have hot-reloaded modules, and then the tests' imports load separate
+// copies of game modules (e.g. a second score) instead of the game's own.
+const PORT = 5299;
 
 export default defineConfig({
     testDir: "tests/e2e",
@@ -25,6 +28,6 @@ export default defineConfig({
     webServer: {
         command: `npx vite --port ${PORT} --strictPort`,
         url: `http://localhost:${PORT}`,
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: false,
     },
 });

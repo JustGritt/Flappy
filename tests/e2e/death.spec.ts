@@ -21,7 +21,7 @@ test("crashing into a pipe flashes, drops the bird to the ground, then shows Gam
                 y: p.pos.y,
                 angle: p.angle,
                 flash: k.get("*").some((o: any) => o.z === 20 && o.opacity > 0.05),
-                pipeX: k.get("pipe", { recursive: true })[0]?.pos.x,
+                pipeX: k.get("pipe", { recursive: true })[0]?.worldPos().x,
                 ground: k.get("ground", { recursive: true })[0].pos.y,
                 pauseHidden: k.get("ui-button").find((b: any) => b.children[0].text === "II").hidden,
             });

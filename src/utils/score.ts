@@ -1,16 +1,22 @@
 import { k } from "../kaboomContext";
 import { playSound } from "./audio";
 import { SCORE_MILESTONE } from "./constants";
+import { currentMode, type Mode } from "./modes";
 
 // ==============================
 // Persistence
 // ==============================
 
-const HIGH_SCORE_KEY = "flappy.highScore";
+// One high score per mode. Before modes existed there was a single one, which
+// counts as Normal's.
+const highScoreKey = (mode: Mode) => `flappy.highScore.${mode}`;
+const LEGACY_HIGH_SCORE_KEY = "flappy.highScore";
 
-function loadHighScore() {
+function loadHighScore(mode: Mode) {
     try {
-        return Number(localStorage.getItem(HIGH_SCORE_KEY)) || 0;
+        const saved = localStorage.getItem(highScoreKey(mode))
+            ?? (mode === "normal" ? localStorage.getItem(LEGACY_HIGH_SCORE_KEY) : null);
+        return Number(saved) || 0;
     } catch {
         return 0;
     }
@@ -18,7 +24,7 @@ function loadHighScore() {
 
 function saveHighScore(value: number) {
     try {
-        localStorage.setItem(HIGH_SCORE_KEY, value.toString());
+        localStorage.setItem(highScoreKey(currentMode()), value.toString());
     } catch {
         // Storage unavailable (private mode, blocked cookies...): keep it in memory only
     }
@@ -31,7 +37,8 @@ function saveHighScore(value: number) {
 const WHITE = k.rgb(255, 255, 255);
 const GOLD = k.rgb(255, 205, 60);
 
-export let highScore = loadHighScore();
+/** The current mode's high score. */
+export let highScore = loadHighScore(currentMode());
 export let score = 0;
 export let isNewHighScore = false;
 
@@ -54,9 +61,15 @@ export function createScore() {
     return scoreLabel
 }
 
+/** Reloads the high score for the current mode. Call after changing mode. */
+export function refreshHighScore() {
+    highScore = loadHighScore(currentMode())
+}
+
 export function resetScore() {
     score = 0
     isNewHighScore = false
+    refreshHighScore()
 }
 
 export function increaseScore(value: number) {

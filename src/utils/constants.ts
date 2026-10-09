@@ -43,7 +43,16 @@ export const MIN_PIPE_INTERVAL = 1.6;
 // between pipes. Keeps fast pipes from asking for an impossible climb or dive.
 export const GAP_SHIFT_PER_SECOND = 150;
 
-// Score at which the pipes reach full difficulty
+// From this score, some pipe pairs bob up and down (never two in a row)
+export const MOVING_PIPES_SCORE = 25;
+// Chance that a pair moves, when allowed
+export const MOVING_PIPE_CHANCE = 0.5;
+// How far (px) a moving pair bobs either side of its resting place, and the
+// seconds per full cycle
+export const MOVING_PIPE_AMPLITUDE = 60;
+export const MOVING_PIPE_PERIOD = 2.4;
+
+// Score at which the pipes reach full difficulty in Normal mode (see utils/modes.ts)
 export const MAX_DIFFICULTY_SCORE = 40;
 
 // Delay between the first flap and the first pipe
@@ -55,6 +64,15 @@ export const FIRST_PIPE_DELAY = 1;
 
 // Every N points the score flashes gold and plays the milestone sound
 export const SCORE_MILESTONE = 10;
+
+// ==============================
+// Sky
+// ==============================
+
+// Points per sky phase (day, sunset, night), and how many of its last points
+// blend into the next one
+export const SKY_PHASE_POINTS = 25;
+export const SKY_TRANSITION_POINTS = 5;
 
 // ==============================
 // Game over

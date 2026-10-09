@@ -1,13 +1,15 @@
-import { createBackground } from '../utils/background';
+import { createBackground, skyColor } from '../utils/background';
 import { createPlayer } from '../entities/player';
 import { createPipe, getDifficulty, resetPipes } from '../entities/pipes';
 import { createGround, groundTop } from '../entities/ground';
 import { isPaused, pause, resetPause, resume } from "../utils/pause";
 import { createScore, increaseScore, resetScore, score } from '../utils/score';
+import { recordRun } from '../utils/stats';
 import { DEATH_DELAY, FIRST_PIPE_DELAY, GRAVITY } from '../utils/constants';
 import { unit } from '../utils/scale';
 import { BUTTON_SIZE, createButton, fitText, isPointerOnButton } from '../utils/ui';
 import { bindMuteKey, isMuted, playSound, toggleMute } from '../utils/audio';
+import { fadeIn, goWithFade } from "../utils/transition";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -53,6 +55,7 @@ function flashScreen() {
 // ==============================
 
 export function createGame() {
+    fadeIn()
     resetScore()
     resetPause()
     resetPipes()
@@ -63,7 +66,11 @@ export function createGame() {
     // while the UI (score, pause overlay) stays responsive.
     const world = k.add([k.timer()])
 
-    createBackground(world)
+    // The sky eases towards the colour for the current score
+    const sky = createBackground(world)
+    sky.onUpdate(() => {
+        sky.color = sky.color.lerp(skyColor(score), Math.min(k.dt() * 2, 1))
+    })
     createGround(() => getDifficulty(score).speed, world)
     createScore()
     const hint = createHint()
@@ -95,16 +102,25 @@ export function createGame() {
     // Death
     // ==============================
 
+    // Count the run in the lifetime stats once, when it ends
+    let runRecorded = false
+    const endRun = () => {
+        if (runRecorded) return
+        runRecorded = true
+        recordRun(score)
+    }
+
     // Freeze the world, then let the bird fall to the ground before Game Over
     const gameOver = () => {
         if (player.state === "dead") return
+        endRun()
         world.paused = true
         pauseButton.hidden = true
         playSound("hit")
         flashScreen()
         k.shake(12)
         die(groundTop(), () => {
-            k.wait(DEATH_DELAY, () => k.go("gameOver"))
+            k.wait(DEATH_DELAY, () => goWithFade("gameOver"))
         })
     }
 
@@ -119,7 +135,11 @@ export function createGame() {
     // Controls
     // ==============================
 
-    k.onKeyPress("escape", () => k.go("menu"))
+    // Quitting mid-flight still counts as a run
+    k.onKeyPress("escape", () => {
+        if (player.state === "flying") endRun()
+        goWithFade("menu")
+    })
 
     const togglePause = () => {
         if (player.state === "dead") return
