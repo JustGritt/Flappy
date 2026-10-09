@@ -4,6 +4,7 @@ import { createPipe, getDifficulty, resetPipes } from '../entities/pipes';
 import { createGround, groundTop } from '../entities/ground';
 import { isPaused, pause, resetPause, resume } from "../utils/pause";
 import { createScore, increaseScore, resetScore, score } from '../utils/score';
+import { recordRun } from '../utils/stats';
 import { DEATH_DELAY, FIRST_PIPE_DELAY, GRAVITY } from '../utils/constants';
 import { unit } from '../utils/scale';
 import { BUTTON_SIZE, createButton, fitText, isPointerOnButton } from '../utils/ui';
@@ -97,9 +98,18 @@ export function createGame() {
     // Death
     // ==============================
 
+    // Count the run in the lifetime stats once, when it ends
+    let runRecorded = false
+    const endRun = () => {
+        if (runRecorded) return
+        runRecorded = true
+        recordRun(score)
+    }
+
     // Freeze the world, then let the bird fall to the ground before Game Over
     const gameOver = () => {
         if (player.state === "dead") return
+        endRun()
         world.paused = true
         pauseButton.hidden = true
         playSound("hit")
@@ -121,7 +131,11 @@ export function createGame() {
     // Controls
     // ==============================
 
-    k.onKeyPress("escape", () => goWithFade("menu"))
+    // Quitting mid-flight still counts as a run
+    k.onKeyPress("escape", () => {
+        if (player.state === "flying") endRun()
+        goWithFade("menu")
+    })
 
     const togglePause = () => {
         if (player.state === "dead") return

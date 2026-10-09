@@ -1,11 +1,12 @@
 import { createBackground } from '../utils/background';
 import { createGround, groundTop } from '../entities/ground';
 import { highScore } from '../utils/score';
+import { stats } from '../utils/stats';
 import { bindMuteKey, isMuted } from '../utils/audio';
 import { PIPE_SPEED } from '../utils/constants';
 import { unit } from '../utils/scale';
 import { fadeIn, goWithFade } from "../utils/transition";
-import { rainbowWave } from "../utils/ui";
+import { fitText, rainbowWave } from "../utils/ui";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -35,6 +36,8 @@ export function createMainMenu() {
             lineSpacing: 8,
             letterSpacing: 4,
             align: "center",
+            // Kaboom only wraps text given a width when created; layout() updates it
+            width: k.width() - 32,
             transform: rainbowWave,
         }),
         k.pos(0, 0),
@@ -47,6 +50,15 @@ export function createMainMenu() {
         k.anchor("center"),
     ])
     highScoreText.hidden = highScore === 0
+
+    const statsText = k.add([
+        k.text(`Games: ${stats.gamesPlayed} · Pipes: ${stats.pipesPassed}`, { size: 20 }),
+        k.pos(0, 0),
+        k.anchor("center"),
+        k.scale(1),
+        k.opacity(0.8),
+    ])
+    statsText.hidden = stats.gamesPlayed === 0
 
     // Text only: any click on the menu starts the game
     const soundText = k.add([
@@ -62,12 +74,19 @@ export function createMainMenu() {
     bindMuteKey(updateSoundText)
 
     const layout = () => {
-        soundText.pos = k.vec2(k.width() / 2, groundTop() - 32)
-        startText.textSize = Math.min(48, k.width() / 14)
+        // Spread over the sky, sized by height too, so short (landscape phone) screens fit
+        const sky = groundTop()
+        const center = (y: number) => k.vec2(k.width() / 2, y)
+
+        title.pos = center(sky * 0.2)
+        fitText(title, Math.min(2, sky / 200))
+        startText.textSize = Math.min(48, k.width() / 14, sky / 10)
         startText.width = k.width() - 32
-        title.pos = k.vec2(k.width() / 2, k.height() / 4)
-        startText.pos = k.vec2(k.width() / 2, k.height() / 2)
-        highScoreText.pos = k.vec2(k.width() / 2, k.height() * 0.7)
+        startText.pos = center(sky * 0.45)
+        highScoreText.pos = center(sky * 0.68)
+        statsText.pos = center(sky * 0.68 + 30)
+        fitText(statsText, 1)
+        soundText.pos = center(sky - 32)
     }
     layout()
     k.onResize(layout)

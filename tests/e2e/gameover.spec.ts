@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openGame, gameOverWithScore, texts, flapInput, playerState, plays, overflowingText } from "./game";
+import { openGame, gameOverWithScore, texts, flapInput, playerState, plays, overflowingText, overlappingRows } from "./game";
 
 test.beforeEach(async ({ page }) => openGame(page));
 
@@ -75,21 +75,7 @@ for (const size of [{ width: 320, height: 568 }, { width: 844, height: 390 }, { 
         await waitForReveal(page);
         await page.waitForTimeout(500);   // medal pop finished
         expect(await overflowingText(page)).toEqual([]);
-        // Rows (title, medal, medal name, score, best, hint) must not overlap vertically
-        const rows = await page.evaluate(() => {
-            const k = window.k;
-            const out: { name: string; top: number; bottom: number }[] = [];
-            for (const o of k.get("*")) {
-                if (o.is("medal")) out.push({ name: "medal", top: o.pos.y - o.radius, bottom: o.pos.y + o.radius });
-                else if (o.text?.trim()) {
-                    const h = o.height * (o.scale?.y ?? 1) ** 2;
-                    out.push({ name: o.text, top: o.pos.y - h / 2, bottom: o.pos.y + h / 2 });
-                }
-            }
-            return out.sort((a, b) => a.top - b.top);
-        });
-        for (let i = 1; i < rows.length; i++) {
-            expect(rows[i].top, `${rows[i - 1].name} / ${rows[i].name}`).toBeGreaterThanOrEqual(rows[i - 1].bottom - 1);
-        }
+        // Rows (title, medal, medal name, score, best, hint) must not overlap
+        expect(await overlappingRows(page)).toEqual([]);
     });
 }

@@ -39,7 +39,8 @@ export function createButton(text: string, onClick: () => void) {
 }
 
 /**
- * Scales a text object to fit `maxWidth`, never above `maxScale`.
+ * Scales a text object (which needs a `k.scale()` component) to fit
+ * `maxWidth`, never above `maxScale`.
  * Call it every frame (or on resize) from the text's layout code.
  */
 export function fitText(text: GameObj, maxScale: number, maxWidth = k.width() - 32) {

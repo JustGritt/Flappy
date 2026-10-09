@@ -60,6 +60,8 @@ export function createGameOver() {
     const startText = k.add([
         k.text("Press space or tap to restart\nEscape for the main menu", {
             align: "center",
+            // Kaboom only wraps text given a width when created; layout() updates it
+            width: k.width() - 32,
             lineSpacing: 8,
         }),
         k.pos(0, 0),
