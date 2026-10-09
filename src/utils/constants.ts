@@ -66,6 +66,15 @@ export const FIRST_PIPE_DELAY = 1;
 export const SCORE_MILESTONE = 10;
 
 // ==============================
+// Sky
+// ==============================
+
+// Points per sky phase (day, sunset, night), and how many of its last points
+// blend into the next one
+export const SKY_PHASE_POINTS = 25;
+export const SKY_TRANSITION_POINTS = 5;
+
+// ==============================
 // Game over
 // ==============================
 

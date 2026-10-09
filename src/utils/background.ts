@@ -1,5 +1,6 @@
 import type { GameObj } from "kaboom";
 import { unit } from "./scale";
+import { SKY_PHASE_POINTS, SKY_TRANSITION_POINTS } from "./constants";
 import { k } from "../kaboomContext";
 
 // ==============================
@@ -18,6 +19,14 @@ k.loadSprite("eyes", "/sprites/cloud-eyes.png")
 k.loadSprite("mimir", "/sprites/cloud-mimir.png")
 
 const sprites = ["cool", "heart", "ok", "star", "suika", "thumb", "turtle", "pien", "eyes", "mimir"];
+
+// Sky colours the run cycles through as the score rises. Each is dark enough
+// for the white score text to stay readable.
+const SKY_PHASES = [
+    k.rgb(52, 152, 219),    // day
+    k.rgb(205, 100, 80),    // sunset
+    k.rgb(24, 32, 72),      // night
+];
 
 // Speed (px/s) of a mid-depth cloud, and seconds between new clouds
 const CLOUD_SPEED = 110;
@@ -40,14 +49,25 @@ function randomSprite() {
 // ==============================
 
 /**
+ * Sky colour for a score: each phase lasts SKY_PHASE_POINTS, blending into
+ * the next over its last SKY_TRANSITION_POINTS, and the cycle loops.
+ */
+export function skyColor(score: number) {
+    const phase = Math.floor(score / SKY_PHASE_POINTS) % SKY_PHASES.length;
+    const into = score % SKY_PHASE_POINTS;
+    const t = k.clamp((into - (SKY_PHASE_POINTS - SKY_TRANSITION_POINTS)) / SKY_TRANSITION_POINTS, 0, 1);
+    return SKY_PHASES[phase].lerp(SKY_PHASES[(phase + 1) % SKY_PHASES.length], t);
+}
+
+/**
  * Adds the sky and the cloud spawner. Clouds are added to `parent` (and its
  * timer drives the spawner) so pausing the parent also freezes them.
  * Call once per scene: it handles window resizes itself.
  */
-export function createBackground(parent?: GameObj) {
+export function createBackground(parent?: GameObj, color = SKY_PHASES[0]) {
     const background = k.add([
         k.rect(k.width(), k.height()),
-        k.color(52, 152, 219),
+        k.color(color),
         k.pos(0, 0),
         k.fixed(),
         k.z(-2),

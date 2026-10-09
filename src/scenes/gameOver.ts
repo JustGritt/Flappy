@@ -1,4 +1,4 @@
-import { createBackground } from '../utils/background';
+import { createBackground, skyColor } from '../utils/background';
 import { createGround, groundTop } from '../entities/ground';
 import { score, highScore, isNewHighScore } from '../utils/score';
 import { RESTART_INPUT_DELAY } from '../utils/constants';
@@ -17,7 +17,8 @@ const countUpTime = (value: number) => Math.min(1.5, 0.3 + value * 0.04)
 
 export function createGameOver() {
     fadeIn()
-    createBackground()
+    // Under the sky the player crashed in
+    createBackground(undefined, skyColor(score))
     // Still, like the frozen world the player just died in
     createGround(() => 0)
 

@@ -1,4 +1,4 @@
-import { createBackground } from '../utils/background';
+import { createBackground, skyColor } from '../utils/background';
 import { createPlayer } from '../entities/player';
 import { createPipe, getDifficulty, resetPipes } from '../entities/pipes';
 import { createGround, groundTop } from '../entities/ground';
@@ -66,7 +66,11 @@ export function createGame() {
     // while the UI (score, pause overlay) stays responsive.
     const world = k.add([k.timer()])
 
-    createBackground(world)
+    // The sky eases towards the colour for the current score
+    const sky = createBackground(world)
+    sky.onUpdate(() => {
+        sky.color = sky.color.lerp(skyColor(score), Math.min(k.dt() * 2, 1))
+    })
     createGround(() => getDifficulty(score).speed, world)
     createScore()
     const hint = createHint()
